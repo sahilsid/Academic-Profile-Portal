@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Faculty Dashboard</title>
+  <!-- plugins:css -->
+  <link rel="stylesheet" href="vendors/mdi/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="vendors/base/vendor.bundle.base.css">
+  <!-- endinject -->
+  <!-- plugin css for this page -->
+  <link rel="stylesheet" href="vendors/datatables.net-bs4/dataTables.bootstrap4.css">
+  <!-- End plugin css for this page -->
+  <!-- inject:css -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- endinject -->
+  <link rel="shortcut icon" href="images/favicon.png" />
+  <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>		
+
+</head>
+
+<script type="text/javascript">
+
+$(function(){
+
+  $('#test').click(function(){
+    $.ajax({
+              type: 'POST',
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/rank_and_route',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    
+                  }else{
+                    console.log("RANK TITLES");
+                    rank_details={}
+                    for(let index=0;index<data['result'].length;index++){
+                      rank_details[''+data['result'][index].rank]=data['result'][index];
+                    }
+                    console.log(window.rank_details)
+                    window.rank_details = rank_details;
+                  }
+              }
+      });
+
+  });
+
+  $('#apply_for_renew').click(function(){
+
+    var values = {};
+          $.each($('#renewForm').serializeArray(), function(i, field) {
+              values[field.name] = field.value;
+          });
+
+          values['application_id']=$('#renew_application_id_value').val();
+          console.log(values);
+          
+          $.ajax({
+              type: 'POST',
+              data:JSON.stringify(values),
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/apply_for_renew',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    if(data['error'].includes("duplicate") || data['error'].includes("Duplicate"))
+                      data['error'] = " Error : Please Complete Your Existing Application";
+                    $('#error_renew_application').html('<p>'+ data['error'] +'</p>');
+                    $('#success_renew_application').hide();
+                  }else{
+                    $('#error_renew_application').hide();
+                    $('#success_renew_application').html('Application Successfull');
+                    location.reload(true); 
+                  }
+              }
+          });
+
+  });
+
+  $('#withdraw').click(function(){
+    $.ajax({
+        type: 'POST',
+        beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+        contentType: 'application/json',
+        url: 'http://localhost:3001/faculty/withdraw_application',						
+        success: function(data) {
+              console.log(data);
+              if(data['success']==false){
+              }
+              else{
+                console.log(data);
+                location.reload(true);
+              }
+        }
+    });
+
+  });
+
+
+  $('#load_pending_applications').click(function(){
+    $.ajax({
+        type: 'POST',
+        beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+        contentType: 'application/json',
+        url: 'http://localhost:3001/faculty/load_pending_applications',						
+        success: function(data) {
+              console.log(data);
+              if(data['success']==false){
+              }
+              else{
+                $('#pending_applications').html('')
+                for(let index=0;index<data['result'].length;index++)
+                  $('#pending_applications').append('<div class="col-md-6 col-lg-6"><div class="card"><div class="card-body"><h4 class="card-title">Application ID : <span style="float:right;color:grey">'+data['result'][index].application_id+'</span></h4><h5 class="card-title">Employee Name  : <span style="float:right;color:grey">'+data['result'][index].application_id+'</span></h5><h5 class="card-title">Department     : <span style="float:right;color:grey">'+data['result'][index].dept+'</span></h5><h5 class="card-title">Leave Start Date  : <span style="float:right;color:grey">'+data['result'][index].start_date+'</span></h5><h5 class="card-title">Leave End Date : <span style="float:right;color:grey">'+data['result'][index].end_date+'</span></h5><h5 class="card-title">Info : </h5><p class="card-description">'+data['result'][index].comment+'</p><br><h5 class="card-title">Add Comments : </h5><div class="form-group"><textarea class="form-control" id="comment_'+data['result'][index].application_id+'" rows="5" placeholder="Add Comments"></textarea></div><br><span style="float:center"><button class="btn btn-outline-primary approveApplication" style="margin:1%" value="'+data['result'][index].application_id+'"> APPROVE </button><button class="btn btn-outline-danger rejectApplication" value="'+data['result'][index].application_id+'"> REJECT </button> <button class="btn btn-outline-dark returnApplication" value="'+data['result'][index].application_id+'"> RETURN </button></span> </div></div></div>'); 
+              }
+              bindremovebutton();
+              
+        }
+    });
+
+  });
+
+  $('#add_experience').click(function(e){
+        e.preventDefault();
+        var experience_title = $("#experience_title").val();
+        var experience_institution = $("#experience_institution").val();
+        var experience_description = $("#experience_description").val();
+        var experience_place    = $('#experience_place').val();
+        var experience_year_start     = $('#experience_year_start').val();
+        var experience_year_end     = $('#experience_year_end').val();
+        var data = {
+          experience : {
+                        title:experience_title,
+                        year:{
+                            start:experience_year_start,
+                            end:experience_year_end
+                        },
+                        institution:experience_institution,
+                        place : experience_place,
+                        description : experience_description
+                      }
+        };
+        
+        console.log(data);
+        
+        $.ajax({
+            type: 'POST',
+            beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+            data:JSON.stringify(data),
+            contentType: 'application/json',
+            url: 'http://localhost:3001/faculty/updateArray',						
+            success: function(data) {
+                console.log(data);
+                if(data['success']==false){
+                  $('#error_new_experience').html('<p>'+ data['error'] +'</p>');
+                 
+                }else{
+                  $('#success_new_experience').html('Successfully Added');
+                  location.reload(true);
+                }
+            }
+        });
+    });				
+
+    
+  $('#add_educational_qualification').click(function(e){
+        e.preventDefault();
+        var education_title = $("#education_title").val();
+        var education_institution = $("#education_institution").val();
+        var education_description = $("#education_description").val();
+        var education_place    = $('#education_place').val();
+        var education_year_start     = $('#education_year_start').val();
+        var education_year_end     = $('#education_year_end').val();
+        var data = {
+          education : {
+                        title:education_title,
+                        year:{
+                            start:education_year_start,
+                            end:education_year_end
+                        },
+                        institution:education_institution,
+                        place : education_place,
+                        description : education_description
+                      }
+        };
+        
+        console.log(data);
+        
+        $.ajax({
+            type: 'POST',
+            beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+            data:JSON.stringify(data),
+            contentType: 'application/json',
+            url: 'http://localhost:3001/faculty/updateArray',						
+            success: function(data) {
+                console.log(data);
+                if(data['success']==false){
+                  $('#error_new_education').html('<p>'+ data['error'] +'</p>');
+                 
+                }else{
+                  $('#success_new_education').html('Successfully Added');
+                  location.reload(true);
+                }
+            }
+        });
+  });				
+
+  $('#add_publication').click(function(e){
+      e.preventDefault();
+      var publication_title = $("#publication_title").val();
+      var publication_at = $("#publication_at").val();
+      var publication_description = $("#publication_description").val();
+      var publication_place    = $('#publication_place').val();
+      var publication_date_day     = $('#publication_date_day').val();
+      var publication_date_month     = $('#publication_date_month').val();
+      var publication_date_year     = $('#publication_date_year').val();
+      var data = {
+        publications : {
+                      title:publication_title,
+                      date:{
+                          day:publication_date_day,
+                          month:publication_date_month,
+                          year:publication_date_year
+                      },
+                      at:publication_at,
+                      location : publication_place,
+                      description : publication_description
+                    }
+      };
+      
+      console.log(data);
+      
+      $.ajax({
+          type: 'POST',
+          beforeSend: function (xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+            },
+          data:JSON.stringify(data),
+          contentType: 'application/json',
+          url: 'http://localhost:3001/faculty/updateArray',						
+          success: function(data) {
+              console.log(data);
+              if(data['success']==false){
+                $('#error_new_publication').html('<p>'+ data['error'] +'</p>');
+                
+              }else{
+                $('#success_new_publication').html('Successfully Added');
+                location.reload(true);
+              }
+          }
+      });
+  });				
+
+
+  $('#add_grant').click(function(e){
+      e.preventDefault();
+      var grant_title = $("#grant_title").val();
+      var grant_amount = $("#grant_amount").val();
+      var grant_description = $("#grant_description").val();
+      var grant_sponsor    = $('#grant_sponsor').val();
+      var grant_location     = $('#grant_location').val();
+      var grant_year_start     = $('#grant_year_start').val();
+      var grant_year_end     = $('#grant_year_end').val();
+      var data = {
+        grants : {
+                      title:grant_title,
+                      year:{
+                          start:grant_year_start,
+                          end:grant_year_end
+                      },
+                      amount:grant_amount,
+                      location : grant_location,
+                      description : grant_description,
+                      sponsor : grant_sponsor
+                    }
+      };
+      
+      console.log(data);
+      
+      $.ajax({
+          type: 'POST',
+          beforeSend: function (xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+            },
+          data:JSON.stringify(data),
+          contentType: 'application/json',
+          url: 'http://localhost:3001/faculty/updateArray',						
+          success: function(data) {
+              console.log(data);
+              if(data['success']==false){
+                $('#error_new_grant').html('<p>'+ data['error'] +'</p>');
+                
+              }else{
+                $('#success_new_grant').html('Successfully Added');
+                location.reload(true);
+              }
+          }
+      });
+  });
+
+  $('#add_teaching').click(function(e){
+      e.preventDefault();
+      var teaching_course_title = $("#teaching_course_title").val();
+      var teaching_course_no = $("#teaching_course_no").val();
+      var teaching_description = $("#teaching_description").val();
+      var teaching_institution    = $('#teaching_institution').val();
+      var teaching_session     = $('#teaching_session').val();
+      var teaching_year     = $('#teaching_year').val();
+      var data = {
+        teaching : {
+                      course_title:teaching_course_title,
+                      year:teaching_year,
+                      session:teaching_session,
+                      course_no : teaching_course_no,
+                      description : teaching_description,
+                      institution : teaching_institution
+                    }
+      };
+      
+      console.log(data);
+      
+      $.ajax({
+          type: 'POST',
+          beforeSend: function (xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+            },
+          data:JSON.stringify(data),
+          contentType: 'application/json',
+          url: 'http://localhost:3001/faculty/updateArray',						
+          success: function(data) {
+              console.log(data);
+              if(data['success']==false){
+                $('#error_new_teaching').html('<p>'+ data['error'] +'</p>');
+                
+              }else{
+                $('#success_new_teaching').html('Successfully Added');
+                location.reload(true);
+              }
+          }
+      });
+  });
+
+
+  $('#logout').click(function(){
+    window.token='';
+    window.location.replace('http://localhost:3001/faculty/loginpage');
+  });
+
+  $('#upload_profile_pic').click(function(){
+    var formData = new FormData();
+    formData.append('image', $('input[type=file]')[0].files[0]);
+
+    $.ajax({
+          beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+          url: 'http://localhost:3001/faculty/update',	
+          type : 'POST',
+          data : formData,
+          processData: false,  // tell jQuery not to process the data
+          contentType: false,  // tell jQuery not to set contentType
+          success : function(data) {
+              location.reload(true); 
+             
+          }
+    });
+  });
+  $('#update_personal_info').click(function(e){
+          e.preventDefault();
+          var name = $("#name_input").val();
+          // var password = $("#password").val();
+          var bio    = $('#bio').val();
+          var contact_no    = $('#contact_no').val();
+          var address = {
+            location : $('#address_location').val(),
+            office   : $('#address_office').val()
+          };
+          var data = {
+            name:name,
+            bio:bio,
+            contact_no : contact_no,
+            address : address
+          };
+          
+          console.log(data);
+          
+          $.ajax({
+              type: 'POST',
+              data:JSON.stringify(data),
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/update',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    $('#error_update_personal_info').html('<p>'+ data['error'] +'</p>');
+                  }else{
+                    $('#success_update_personal_info').html('Successfully Updated');
+                    location.reload(true); 
+                  }
+              }
+          });
+          
+  });
+
+  $('#apply_for_leave').click(function(e){
+          e.preventDefault();
+          
+          
+          var values = {};
+          $.each($('#leaveForm').serializeArray(), function(i, field) {
+              values[field.name] = field.value;
+          });
+
+          
+          console.log(values);
+          
+          $.ajax({
+              type: 'POST',
+              data:JSON.stringify(values),
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/apply_for_leave',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    if(data['error'].includes("duplicate") || data['error'].includes("Duplicate"))
+                      data['error'] = " Error : Please Complete Your Existing Application";
+                    $('#error_leave_application').html('<p>'+ data['error'] +'</p>');
+                    $('#success_leave_application').hide();
+                  }else{
+                    $('#error_leave_application').hide();
+                    $('#success_leave_application').html('Application Successfull');
+                    location.reload(true); 
+                  }
+              }
+          });
+          
+      });
+
+    $('#other_employees_leave').click(function(){
+      
+      $('#other_employee_leave_content').show();
+      $.ajax({
+        type: 'POST',
+        beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+        contentType: 'application/json',
+        url: 'http://localhost:3001/faculty/other_employees_leave',						
+        success: function(data) {
+            console.log('success');
+            console.log(data);
+            otherEmployeeDetails={}
+            for(let index=0;index<data['result'].length;index++){
+              otherEmployeeDetails[''+data['result'][index].employee_id]=data['result'][index];
+              $('#other_faculty_leave_table').append('<tr> <td>'+ window.facultyList[data['result'][index].employee_id].name+'</td><td>'+data['result'][index].total_leaves_taken+'</td><td>'+data['result'][index].leaves_borrowed+'</td></tr>'); 
+            
+            }
+            window.otherEmployeeDetails = otherEmployeeDetails;
+            
+        }
+      });
+
+    });
+});
+
+function load_pending_applications() {
+  
+}
+
+function bindremovebutton() {
+    $('body').on('click', '.removeDegree', function() {
+      console.log(this.value);
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                education:{
+                  _id:this.value
+                }
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/removeArray',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    $('#error_get_education').html('<p>'+ data['error'] +'</p>');
+                  }else{
+                    $('#success_get_education').html('Removed Qualification');
+                    location.reload(true);
+                  }
+              }
+      });
+    });
+    
+    $('body').on('click', '.removeWork', function() {
+      console.log(this.value);
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                experience:{
+                  _id:this.value
+                }
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/removeArray',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    $('#error_get_experience').html('<p>'+ data['error'] +'</p>');
+                  }else{
+                    $('#success_get_experience').html('Removed Experience');
+                    location.reload(true);
+                  }
+              }
+      });
+    });
+
+    $('body').on('click', '.removePublication', function() {
+      console.log(this.value);
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                publications:{
+                  _id:this.value
+                }
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/removeArray',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    $('#error_get_publication').html('<p>'+ data['error'] +'</p>');
+                  }else{
+                    $('#success_get_publication').html('Removed Publication');
+                    location.reload(true);
+                  }
+              }
+      });
+    });
+
+    $('body').on('click', '.removeGrant', function() {
+      console.log(this.value);
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                grants:{
+                  _id:this.value
+                }
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/removeArray',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    $('#error_get_grant').html('<p>'+ data['error'] +'</p>');
+                  }else{
+                    $('#success_get_grant').html('Removed Grant');
+                    location.reload(true);
+                  }
+              }
+      });
+    });
+
+    $('body').on('click', '.removeTeaching', function() {
+      console.log(this.value);
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                teaching:{
+                  _id:this.value
+                }
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/removeArray',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    $('#error_get_teaching').html('<p>'+ data['error'] +'</p>');
+                  }else{
+                    $('#success_get_teaching').html('Removed Course');
+                    location.reload(true);
+                  }
+              }
+      });
+    });
+
+    $('body').on('click', '.logApplication', function() {
+      $('#application_log_details').show();
+      console.log(this.value);
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                  id:this.value
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/application_log',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    $('#error_application_log').html('<p>'+ data['error'] +'</p>');
+                  }else{
+                    $('#application_log_table_body').html('');
+                  
+                    for(let index=0;index<data['result'].length;index++)
+                        $('#application_log_table_body').append('<tr> <td>'+data['result'][index].time+'</td><td>'+window.facultyList[data['result'][index].signed_by].name+'</td><td>'+data['result'][index].from_level+'</td><td>'+data['result'][index].comment+'</td><td>'+data['result'][index].to_level+'</td></tr>'); 
+                  }
+              }
+      });
+    });
+
+    $('body').on('click', '.approveApplication', function() {
+      
+      var appid   = this.value;
+      var comment = $('#comment_'+appid).val();
+      console.log(comment); 
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                data:{
+                  application_id:this.value,
+                  comment  : comment,
+                  action   : "approved"
+                }
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/updateApplication',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    
+                  }else{
+                    location.reload(true);
+                  }
+              }
+      });
+    });
+
+    $('body').on('click', '.rejectApplication', function() {
+      
+      var appid   = this.value;
+      var comment = $('#comment_'+appid).val();
+      console.log(comment); 
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                data:{
+                  application_id:this.value,
+                  comment  : comment,
+                  action   : "rejected"
+                }
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/updateApplication',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    
+                  }else{
+                    location.reload(true);
+                  }
+              }
+      });
+    });
+
+    $('body').on('click', '.returnApplication', function() {
+      
+      var appid   = this.value;
+      var comment = $('#comment_'+appid).val();
+      console.log(comment); 
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              data:JSON.stringify({
+                data:{
+                  application_id:this.value,
+                  comment  : comment,
+                  action   : "returned"
+                }
+              }),
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/updateApplication',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    
+                  }else{
+                    location.reload(true);
+                  }
+              }
+      });
+    });
+
+}
+
+$( document ).ready(function() {
+    console.log( "ready!" );
+
+
+    $.ajax({
+        type: 'POST',
+        contentType: 'application/json',
+        url: 'http://localhost:3001/faculty/getlist',						
+        success: function(data) {
+            console.log('success');
+            console.log(data);
+            $('#faculty_count').html('<p>'+data['faculty'].length+' <span>Faculties</span> currently.</p>');
+            facultyList={}
+            for(let index=0;index<data['faculty'].length;index++){
+              facultyList[''+data['faculty'][index]._id]=data['faculty'][index];
+            }
+            window.facultyList = facultyList;
+        }
+    });
+
+    var queryDict = {}
+    location.search.substr(1).split("&").forEach(function(item) {queryDict[item.split("=")[0]] = item.split("=")[1]})
+    console.log(queryDict);
+    if(!queryDict['token'])
+      window.location.replace('http://localhost:3001/faculty/loginpage');
+    else{
+      $('.container-scroller').show();
+      window.token = queryDict['token'];
+      $('.leave_content').hide();
+      $.ajax({
+        type: 'POST',
+        data:JSON.stringify({token:window.token}),
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+        },
+        contentType: 'application/json',
+        url: 'http://localhost:3001/faculty/getwithtoken',						
+        success: function(data) {
+            console.log('success');
+            console.log(data);
+            
+            window.faculty=data['faculty'][0];
+            
+            console.log(window.faculty.usr_img_path );
+            
+            $('#profile_pic').html('<img src="../'+window.faculty.usr_img_path +'" alt="" width="250" height="250" />');
+            $('#name').html(window.faculty.name);
+            $('#name_input').val(window.faculty.name);
+            $('#welcome').html(window.faculty.name);
+            if(window.faculty.contact_no)
+            $('#contact_no').val(window.faculty.contact_no);
+            
+            if(window.faculty.address){
+              $('#address_location').val(window.faculty.address.location);
+              $('#address_office').val(window.faculty.address.office);
+            }
+            
+            if(window.faculty.bio)
+              $('#bio').val(window.faculty.bio);
+            
+            for(let index=0;index<window.faculty.education.length;index++)
+              $('#education_table_body').append('<tr> <td>'+window.faculty.education[index].title+'</td><td>'+window.faculty.education[index].institution+'</td><td>'+window.faculty.education[index].place+'</td><td>'+window.faculty.education[index].year.start+'</td><td>'+window.faculty.education[index].year.end+'</td><td><button class="btn btn-outline-danger btn-fw removeDegree" value='+ window.faculty.education[index]._id +' >Remove</button></td></tr>'); 
+            
+            for(let index=0;index<window.faculty.experience.length;index++)
+              $('#experience_table_body').append('<tr> <td>'+window.faculty.experience[index].title+'</td><td>'+window.faculty.experience[index].institution+'</td><td>'+window.faculty.experience[index].place+'</td><td>'+window.faculty.experience[index].year.start+'</td><td>'+window.faculty.experience[index].year.end+'</td><td><button class="btn btn-outline-danger btn-fw removeWork" value='+ window.faculty.experience[index]._id +' >Remove</button></td></tr>'); 
+            
+            for(let index=0;index<window.faculty.publications.length;index++)
+              $('#publication_table_body').append('<tr> <td>'+window.faculty.publications[index].title+'</td><td>'+window.faculty.publications[index].at+'</td><td>'+window.faculty.publications[index].location+'</td><td><button class="btn btn-outline-danger btn-fw removePublication" value='+ window.faculty.publications[index]._id +' >Remove</button></td></tr>'); 
+            
+            for(let index=0;index<window.faculty.grants.length;index++)
+              $('#grant_table_body').append('<tr> <td>'+window.faculty.grants[index].title+'</td><td>'+window.faculty.grants[index].sponsor+'</td><td>'+window.faculty.grants[index].amount+'</td><td>'+window.faculty.grants[index].year.start+'</td><td>'+window.faculty.grants[index].year.end+'</td><td><button class="btn btn-outline-danger btn-fw removeGrant" value='+ window.faculty.grants[index]._id +' >Remove</button></td></tr>'); 
+            
+            for(let index=0;index<window.faculty.teaching.length;index++)
+              $('#teaching_table_body').append('<tr> <td>'+window.faculty.teaching[index].course_no+'</td><td>'+window.faculty.teaching[index].course_title+'</td><td>'+window.faculty.teaching[index].institution+'</td><td>'+window.faculty.teaching[index].session+'</td><td>'+window.faculty.teaching[index].year+'</td><td><button class="btn btn-outline-danger btn-fw removeTeaching" value='+ window.faculty.teaching[index]._id +' >Remove</button></td></tr>'); 
+            
+
+            bindremovebutton();    
+        }
+      });
+
+      $.ajax({
+              type: 'POST',
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader('Authorization', 'Bearer '+window.token);
+              },
+              contentType: 'application/json',
+              url: 'http://localhost:3001/faculty/application_history',						
+              success: function(data) {
+                  console.log(data);
+                  if(data['success']==false){
+                    $('#error_get_grant').html('<p>'+ data['error'] +'</p>');
+                  }else{
+                    $('#success_get_grant').html('Removed Grant');
+                    
+                    for(let index=0;index<data['result'].length;index++)
+                      $('#application_table_body').append('<tr> <td>'+data['result'][index].application_id+'</td><td>'+data['result'][index].start_date+'</td><td>'+data['result'][index].end_date+'</td><td>'+data['result'][index].final_status+'</td><td><button class="btn btn-outline-danger btn-fw logApplication" value='+ data['result'][index].application_id +' >Details</button></td></tr>'); 
+
+                    if(data['result'][0].final_status=="pending" || data['result'][0].final_status=="returned")
+                      $('#withdraw').show();
+                    
+                    if(data['result'][0].final_status=="returned"){
+                      $('#renew_application').show();
+                      $('#renew_application_id').html(''+data['result'][0].application_id);
+                      $('#renew_application_id_value').val(data['result'][0].application_id);
+                    }
+                    
+                    console.log(data['result'][0])
+                    bindremovebutton();   
+                  }
+              }
+      });
+
+    }
+});
+</script>
+<body>
+  <div class="container-scroller" style="display: none">
+    <!-- partial:partials/_navbar.html -->
+    <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+      <div class="navbar-brand-wrapper d-flex justify-content-center">
+        <div class="navbar-brand-inner-wrapper d-flex justify-content-between align-items-center w-100">  
+          <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
+            <span class="mdi mdi-sort-variant"></span>
+          </button>
+        </div>  
+      </div>
+      <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+        <ul class="navbar-nav mr-lg-4 w-100">
+          <li class="nav-item nav-search d-none d-lg-block w-100">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text" id="search">
+                  <i class="mdi mdi-magnify"></i>
+                </span>
+              </div>
+              <input type="text" class="form-control" placeholder="Search now" aria-label="search" aria-describedby="search">
+            </div>
+          </li>
+        </ul>
+        
+        <ul class="navbar-nav navbar-nav-right">
+          <li class="nav-item nav-profile dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
+              <span id="profile_pic"><img src="" alt="profile"/></span>
+              <span class="nav-profile-name" id="name"></span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+              <a class="dropdown-item" id="logout">
+                <i class="mdi mdi-logout text-primary" ></i>
+                Logout
+              </a>
+            </div>
+          </li>
+        </ul>
+        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+          <span class="mdi mdi-menu"></span>
+        </button>
+      </div>
+    </nav>
+    <!-- partial -->
+    <div class="container-fluid page-body-wrapper">
+      <!-- partial:partials/_sidebar.html -->
+      <nav class="sidebar sidebar-offcanvas" id="sidebar">
+        <ul class="nav">
+          <li class="nav-item" onclick="(function(){$('.profile_content').show();$('.leave_content').hide();})()">
+            <a class="nav-link" href="index.html">
+              <i class="mdi mdi-home menu-icon"></i>
+              <span class="menu-title">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item" onclick="(function(){$('.profile_content').hide();$('.leave_content').show();})()">
+            <a class="nav-link" data-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
+              <i class="mdi mdi-circle-outline menu-icon"></i>
+              <span class="menu-title"> Leave Application</span>
+              <i class="menu-arrow"></i>
+            </a>
+            
+          </li>
+          
+        </ul>
+      </nav>
+      <!-- partial -->
+      <div class="main-panel">
+        <div class="content-wrapper">
+          
+          <div class="row">
+            <div class="col-md-12 grid-margin">
+                  <div class="mr-md-3 mr-xl-5" style="text-align: center">
+                    <h3>Welcome back, <span style="color: grey" id="welcome"></span></h3>
+                  </div>
+                  
+            </div>
+          </div>
+          
+          <div class="row">
+              <div class="col-md-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body dashboard-tabs p-0">
+                    <ul class="nav nav-tabs px-4" role="tablist">
+                      <li class="nav-item">
+                        <a class="nav-link active" id="overview-tab" data-toggle="tab" href="#overview" role="tab" aria-controls="overview" aria-selected="true">Profile Overview</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" id="sales-tab" data-toggle="tab" href="#sales" role="tab" aria-controls="sales" aria-selected="false">Leave Overview</a>
+                      </li>
+                      
+                    </ul>
+                    <div class="tab-content py-0 px-0">
+                      <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                        <div class="d-flex flex-wrap justify-content-xl-between">
+                          <div class="d-flex border-md-right flex-grow-1 align-items-center justify-content-center p-3 item">
+                            <i class="mdi mdi-currency-usd mr-3 icon-lg text-danger"></i>
+                            <div class="d-flex flex-column justify-content-around">
+                              <small class="mb-1 text-muted">Grants</small>
+                              <h5 class="mr-2 mb-0" id="grants_overview">$575</h5>
+                            </div>
+                          </div>
+                          <div class="d-flex border-md-right flex-grow-1 align-items-center justify-content-center p-3 item">
+                            <i class="mdi mdi-eye mr-3 icon-lg text-success"></i>
+                            <div class="d-flex flex-column justify-content-around">
+                              <small class="mb-1 text-muted">Total Publications</small>
+                              <h5 class="mr-2 mb-0" id="publications_overview">9833550</h5>
+                            </div>
+                          </div>
+                          <div class="d-flex border-md-right flex-grow-1 align-items-center justify-content-center p-3 item">
+                            <i class="mdi mdi-download mr-3 icon-lg text-warning"></i>
+                            <div class="d-flex flex-column justify-content-around">
+                              <small class="mb-1 text-muted">Courses Taught</small>
+                              <h5 class="mr-2 mb-0" id="teaching_overview">23</h5>
+                            </div>
+                          </div>
+                          
+                        </div>
+                      </div>
+                      <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
+                        <div class="d-flex flex-wrap justify-content-xl-between">
+                          <div class="d-flex border-md-right flex-grow-1 align-items-center justify-content-center p-3 item">
+                            <i class="mdi mdi-human-handsup mr-3 icon-lg text-warning"></i>
+                            <div class="d-flex flex-column justify-content-around">
+                              <small class="mb-1 text-muted">Leaves Taken This Year</small>
+                              <h5 class="mr-2 mb-0" id="leaves_taken">2233783</h5>
+                            </div>
+                          </div>
+                          <div class="d-flex border-md-right flex-grow-1 align-items-center justify-content-center p-3 item">
+                            <i class="mdi mdi-human-handsup mr-3 icon-lg text-success"></i>
+                            <div class="d-flex flex-column justify-content-around">
+                              <small class="mb-1 text-muted">Leaves Remaining</small>
+                              <h5 class="mr-2 mb-0" id="leaves_remaining">9833550</h5>
+                            </div>
+                          </div>
+                          <div class="d-flex border-md-right flex-grow-1 align-items-center justify-content-center p-3 item">
+                            <i class="mdi mdi-human-handsup mr-3 icon-lg text-danger"></i>
+                            <div class="d-flex flex-column justify-content-around">
+                              <small class="mb-1 text-muted">Leaves Borrowed</small>
+                              <h5 class="mr-2 mb-0" id="leaves_borrowed">2</h5>
+                            </div>
+                          </div>
+                          
+                        </div>
+                      </div>
+                      
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+
+          <div class="row profile_content">
+            <div class="col-md-6 col-lg-6">
+                <div class="card">
+                  <div class="card-body">       
+                    <form class="forms-sample" id="upload_image">
+                    
+                        <div class="form-group">
+                          <label>Update Profile Picture</label>
+                          <input type="file" id="profile_pic_file" name="image" class="file-upload-default">
+                          <div class="input-group col-xs-12">
+                            <input type="text" class="form-control file-upload-info" disabled placeholder="Upload Image">
+                            <span class="input-group-append">
+                              <button class="file-upload-browse btn btn-primary" type="button">Upload</button>
+                            </span>
+                          </div>
+                        </div>
+                        <label id="upload_profile_pic" class="btn btn-primary mr-2">Submit</label>
+                        <button class="btn btn-light">Cancel</button>
+                    </form>
+                  </div>
+                </div>
+            </div>
+          </div>
+          <br>
+          <div class="row profile_content">
+            
+            <div class="col-md-4 col-lg-4 grid-margin stretch-card">
+
+              
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">Update Personal Information</h4>
+                  
+                  <span style="color: green" id="success_update_personal_info"></span>
+                  <span style="color: red" id="error_update_personal_info"></span>
+                  <form class="forms-sample">
+                    <div class="form-group">
+                      <label for="exampleInputName1">Name</label>
+                      <input type="text" class="form-control" id="name_input" placeholder="Name">
+                    </div>
+                    <div class="form-group">
+                      <label for="exampleInputEmail3">Contact No</label>
+                      <input type="number" class="form-control" id="contact_no" placeholder="Mobile/Phone Number" >
+                    </div>
+                    <!-- <div class="form-group">
+                      <label for="exampleInputPassword4">Password</label>
+                      <input type="password" class="form-control" id="exampleInputPassword4" placeholder="Password">
+                    </div> -->
+                    <div class="form-group">
+                      <label for="exampleSelectGender">Address</label>
+                          <input type="text" class="form-control" id="address_location" placeholder="Location ">
+                          <input type="text" class="form-control" id="address_office" placeholder="Office/Room No">
+                        
+                    </div>
+                    
+                    <div class="form-group">
+                      <label for="exampleTextarea1">Bio</label>
+                      <textarea class="form-control" id="bio" rows="2" placeholder="Personal Biography"></textarea>
+                    </div>
+                    <button type="submit" id="update_personal_info" class="btn btn-primary mr-2">Submit</button>
+                    <button class="btn btn-light">Cancel</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-lg-4">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Add Qualifications</h4>
+                    <p class="card-description">
+                      
+                    </p>
+                    <span id="error_new_education" style="color: red"></span>
+                    <span id="success_new_education" style="color: green"></span>
+                    <form class="forms-sample" id="educationForm">
+                      <div class="form-group">
+                        <label for="exampleInputUsername1">Degree / Qualification</label>
+                        <input id="education_title" type="text" class="form-control" placeholder="Title of Awarded Degree ">
+                      </div>
+                      <div class="form-group">
+                        <label for="exampleInputEmail1">Institution</label>
+                        <input id="education_institution" type="text" class="form-control"  placeholder="Institution Awarding the Qualification">
+                      </div>
+                      <div class="form-inline">
+                        <input id="education_year_start" type="number" class="form-control"  placeholder="Start year">
+
+                        <input id="education_year_end" type="number" class="form-control"  placeholder="Completion Year">
+
+                      </div>
+                      <div class="form-group">
+                          <label for="exampleSelectGender">Place</label>
+                          <input id="education_place" type="text" class="form-control"  placeholder="Place of Issue of Degree">
+                      </div>
+                      <div class="form-group">
+                        <label for="exampleInputConfirmPassword1">Description</label>
+                        <input type="text" id="education_description" class="form-control"  placeholder="An optional Description of the Degree Awarded ">
+                      </div>
+                      
+                      <div id="add_educational_qualification" class="btn btn-primary mr-2">Add</div>
+                      <div class="btn btn-light">Cancel</div>
+                    </form>
+                  
+                  
+                  </div>
+              </div> <br>
+            </div>
+
+            <div class="col-md-4 col-lg-4">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Add Work Experience</h4>
+                    <p class="card-description">
+                      
+                    </p>
+                    <span id="error_new_experience" style="color: red"></span>
+                    <span id="success_new_experience" style="color: green"></span>
+                    <form class="forms-sample" id="experienceForm">
+                      <div class="form-group">
+                        <label for="exampleInputUsername1"> Position </label>
+                        <input id="experience_title" type="text" class="form-control" placeholder="Title of Position (Job) ">
+                      </div>
+                      <div class="form-group">
+                        <label for="exampleInputEmail1">Organization</label>
+                        <input id="experience_institution" type="text" class="form-control"  placeholder="Organization Employed In">
+                      </div>
+                      <div class="form-inline">
+                        <input id="experience_year_start" type="number" class="form-control"  placeholder="Start year">
+
+                        <input id="experience_year_end" type="number" class="form-control"  placeholder="Completion Year">
+
+                      </div>
+                      <div class="form-group">
+                          <label for="exampleSelectGender">Place</label>
+                        
+                          <input id="experience_place" type="text" class="form-control"  placeholder="Place of Work">
+                      </div>
+                      <div class="form-group">
+                        <label for="exampleInputConfirmPassword1">Description</label>
+                        <input type="text" id="experience_description" class="form-control"  placeholder="An optional Description of the Work Experience ">
+                      </div>
+                      
+                      <div id="add_experience" class="btn btn-primary mr-2">Add</div>
+                      <div class="btn btn-light">Cancel</div>
+                    </form>
+                  
+                  </div>
+              </div>
+              <br>
+            </div>
+
+            <div class="col-md-4 col-lg-4">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Add Publication</h4>
+                    <p class="card-description">
+                      
+                    </p>
+                    <span id="error_new_publication" style="color: red"></span>
+                    <span id="success_new_publication" style="color: green"></span>
+                    <form class="forms-sample" id="publicationForm">
+                      <div class="form-group">
+                        <label for="exampleInputUsername1"> Title </label>
+                        <input id="publication_title" type="text" class="form-control" placeholder="Title of Publication ">
+                      </div>
+                      <div class="form-group">
+                          <label for="exampleInputConfirmPassword1">Co Authors</label>
+                          <input type="text" id="publication_co_authors" class="form-control"  placeholder="An optional Description of the publication ">
+                      </div>
+                      <label for="exampleInputConfirmPassword1" > Published At</label>
+                      <div class="form-inline">
+                        <input id="publication_at" type="text" class="form-control"  placeholder="Name of Conference, Journal ,etc ">
+                        <input id="publication_place" type="text" class="form-control"  placeholder="Place ">
+                      </div>
+                      <div class="form-inline">
+                        <input id="publication_date_day" type="number" class="form-control"  placeholder="Day">
+
+                        <input id="publication_date_month" type="text" class="form-control"  placeholder="Month">
+
+                        <input id="publication_date_year" type="number" class="form-control"  placeholder="Year">
+                      </div>
+                      <div class="form-group">
+                        <label for="exampleInputConfirmPassword1">Description</label>
+                        <input type="text" id="publication_description" class="form-control"  placeholder="An optional Description of the publication ">
+                      </div>
+                      
+                      
+                      <div id="add_publication" class="btn btn-primary mr-2">Add</div>
+                      <div class="btn btn-light">Cancel</div>
+                    </form>
+                  
+                  
+                  </div>
+              </div>
+            </div>
+
+            <div class="col-md-4 col-lg-4">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Add Grants / Awards</h4>
+                    <p class="card-description">
+                      
+                    </p>
+                    <span id="error_new_grant" style="color: red"></span>
+                    <span id="success_new_grant" style="color: green"></span>
+                    <form class="forms-sample" id="grantForm">
+                      <div class="form-inline">
+                        <input id="grant_title" type="text" class="form-control" placeholder="Title of Award / Grant ">
+                        <input id="grant_amount" type="number" class="form-control"  placeholder="Amount Received">
+                      </div>
+                      <br>
+                      <div class="form-group">
+                        <label for="exampleInputEmail1">Sponsor / Organization</label>
+                        <input id="grant_sponsor" type="text" class="form-control"  placeholder="Organization Awarding the Grant">
+                      </div>
+                      <div class="form-inline">
+                        <input id="grant_year_start" type="number" class="form-control"  placeholder="Start year">
+
+                        <input id="grant_year_end" type="number" class="form-control"  placeholder="End Year">
+
+                      </div>
+                      <br>
+                      <div class="form-group">
+                          <label for="exampleSelectGender">Place</label>
+                        
+                          <input id="grant_location" type="text" class="form-control"  placeholder="Place of Award">
+                      </div>
+                      <div class="form-group">
+                        <label for="exampleInputConfirmPassword1">Description</label>
+                        <input type="text" id="grant_description" class="form-control"  placeholder="An optional Description of the Grant Received">
+                      </div>
+                      
+                      <div id="add_grant" class="btn btn-primary mr-2">Add</div>
+                      <div class="btn btn-light">Cancel</div>
+                    </form>
+                  
+                  <br>
+                  
+                  </div>
+              </div>
+            </div>
+
+            <div class="col-md-4 col-lg-4 profile_content">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Add Teaching/ Courses</h4>
+                    <p class="card-description">
+                      
+                    </p>
+                    <span id="error_new_grant" style="color: red"></span>
+                    <span id="success_new_grant" style="color: green"></span>
+                    <form class="forms-sample" id="teachingForm">
+                      <div class="form-inline">
+                        <input id="teaching_course_no" type="text" class="form-control"  placeholder="Course No">
+                        <input id="teaching_course_title" type="text" class="form-control" placeholder="Title of Course ">
+                      </div>
+                      <br>
+                      <div class="form-group">
+                        <label for="exampleInputEmail1">Institution</label>
+                        <input id="teaching_institution" type="text" class="form-control"  placeholder="Institution Name">
+                      </div>
+                      <label for="exampleInputEmail1">Session and Year </label>
+                      <div class="form-inline">
+                        
+                        <input id="teaching_session" type="text" class="form-control"  placeholder="Fall / Spring">
+                        <input id="teaching_year" type="number" class="form-control"  placeholder="Year">
+                      </div>
+                      
+                      <br>
+                      
+                      <div class="form-group">
+                        <label for="exampleInputConfirmPassword1">Description</label>
+                        <textarea id="teaching_description" class="form-control" rows="7"  placeholder="An optional Description of the Course Taught"></textarea>
+                      </div>
+                      
+                      <div id="add_teaching" class="btn btn-primary mr-2">Add</div>
+                      <div class="btn btn-light">Cancel</div>
+                    </form>
+                  
+                  <br>
+                  
+                  </div>
+              </div>
+            </div>
+
+          </div>
+
+          <br>
+          <div class="row profile_content">
+            <div class="col-md-6 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                    <p class="card-title">Remove Educational Qualifications</p>
+                    <p class="card-description">
+                      <span id="success_get_qualifications" style="color: green"></span>
+                      <span id="error_get_qualifications" style="color: red"></span>
+                    </p>
+                    <div class="table-responsive table-striped table-bordered">
+                      <table id="education_table" class="table">
+                        <thead>
+                          <tr>
+                              <th>Title</th>
+                              <th>Institution</th>
+                              <th>Place</th>
+                              <th>Start Year</th>
+                              <th>End Year</th>
+                              <th>Remove</th>
+                          </tr>
+                        </thead>
+                        <tbody  id="education_table_body">
+                          
+                          
+                        </tbody>
+                      </table>
+                    </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                    <p class="card-title">Remove Work Experience</p>
+                    <p class="card-description">
+                      <span id="success_get_experience" style="color: green"></span>
+                      <span id="error_get_experience" style="color: red"></span>
+                    </p>
+                    <div class="table-responsive table-striped">
+                      <table id="education_table" class="table">
+                        <thead>
+                          <tr>
+                              <th>Position</th>
+                              <th>Organization</th>
+                              <th>Place</th>
+                              <th>Start Year</th>
+                              <th>End Year</th>
+                              <th>Remove</th>
+                          </tr>
+                        </thead>
+                        <tbody  id="experience_table_body">
+                          
+                          
+                        </tbody>
+                      </table>
+                    </div>                  
+                </div>
+                
+              </div>
+            </div>
+            <div class="col-md-6 grid-margin stretch-card profile_content">
+                <div class="card">
+                  <div class="card-body">
+                      <p class="card-title">Remove Publication</p>
+                      <p class="card-description">
+                        <span id="success_get_publication" style="color: green"></span>
+                        <span id="error_get_publication" style="color: red"></span>
+                      </p>
+                      <div class="table-responsive table-striped table-bordered">
+                        <table id="publication_table" class="table">
+                          <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Published At</th>
+                                <th>Place</th>
+                                <th>Remove</th>
+                            </tr>
+                          </thead>
+                          <tbody  id="publication_table_body">
+                            
+                            
+                          </tbody>
+                        </table>
+                      </div>                  
+                  </div>
+                  
+                </div>
+            </div>
+            <div class="col-md-6 grid-margin stretch-card profile_content">
+                <div class="card">
+                  <div class="card-body">
+                      <p class="card-title">Remove Grants/Awards</p>
+                      <p class="card-description">
+                        <span id="success_get_grants" style="color: green"></span>
+                        <span id="error_get_grants" style="color: red"></span>
+                      </p>
+                      <div class="table-responsive table-striped table-bordered">
+                        <table id="grant_table" class="table">
+                          <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Sponsor</th>
+                                <th>Amount</th>
+                                <th>Start Year</th>
+                                <th>End Year</th>
+                                <th>Remove</th>
+                            </tr>
+                          </thead>
+                          <tbody  id="grant_table_body">
+                            
+                            
+                          </tbody>
+                        </table>
+                      </div>
+                  </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 grid-margin stretch-card profile_content">
+                <div class="card">
+                  <div class="card-body">
+                      <p class="card-title">Remove Teaching / Courses</p>
+                      <p class="card-description">
+                        <span id="success_get_teaching" style="color: green"></span>
+                        <span id="error_get_teaching" style="color: red"></span>
+                      </p>
+                      <div class="table-responsive table-striped table-bordered">
+                        <table id="teaching_table" class="table">
+                          <thead>
+                            <tr>
+                                <th>Course No</th>
+                                <th>Course Title</th>
+                                <th>Institution</th>
+                                <th>Session</th>
+                                <th>Year</th>
+                                <th>Remove</th>
+                            </tr>
+                          </thead>
+                          <tbody  id="teaching_table_body">
+                            
+                            
+                          </tbody>
+                        </table>
+                      </div>
+                  </div>
+                </div>
+            </div>
+            
+
+          </div>
+          
+          <div class="row leave_content">
+              <div class="col-md-12 grid-margin">
+                    <div class="mr-md-3 col-md-3 mr-xl-5">
+                      <h4 style="color: burlywood"> Personal <span style="color: grey"> Leave Details </span></h4>
+                    </div>
+              </div>
+          </div>
+            
+          <div class="row leave_content">
+              <div class="col-md-6 col-lg-6">
+                  <div class="card">
+                      <button class="btn btn-outline-dark" style="display:none" id="withdraw">Withdraw Existing Application</button>
+                      
+                      <div class="card-body">
+                          <h4 class="card-title">Apply For Leave</h4>
+                          <p class="card-description">
+                            
+                          </p>
+                          <span id="error_leave_application" style="color: red"></span>
+                          <span id="success_leave_application" style="color: green"></span>
+                          <form class="forms-sample" id="leaveForm">
+                            <div class="form-group">
+                              <label for="exampleInputEmail1">DESCRIPTION</label>
+                              <textarea id="leave_description" name="leave_description" rows="7" class="form-control"  placeholder="Leave Application Body"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleSelectGender">Duration</label>
+                              
+                                <input id="leave_from" name="leave_from"  type="date" class="form-control"  placeholder="From">
+                                <input id="leave_to" name="leave_to" type="date" class="form-control"  placeholder="To">
+                            </div>
+                            <div id="apply_for_leave" class="btn btn-primary mr-2">Apply</div>
+                            <div class="btn btn-light">Cancel</div>
+                          </form>
+                        
+                        </div>
+                  </div>
+              </div>
+              <div class="col-md-6 col-lg-6">
+
+                  <div class="card" id="renew">
+                      <div class="card-body" style="display:none" id="renew_application">
+                          <h4 class="card-title" >RENEW APPLICATION : <span id="renew_application_id"></span></h4>
+                          <p class="card-description">
+                             <input type="text" style="display:none" id="renew_application_id_value">
+                          </p>
+                          <span id="error_renew_application" style="color: red"></span>
+                          <span id="success_renew_application" style="color: green"></span>
+                          <form class="forms-sample" id="renewForm">
+                            <div class="form-group">
+                              <label for="exampleInputEmail1">DESCRIPTION</label>
+                              <textarea id="description" name="leave_description" rows="5" class="form-control"  placeholder="Leave Application Body"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleSelectGender">Duration</label>
+                              
+                                <input id="leave_from" name="leave_from"  type="date" class="form-control"  placeholder="From">
+                                <input id="leave_to" name="leave_to" type="date" class="form-control"  placeholder="To">
+                            </div>
+                            <div id="apply_for_renew" class="btn btn-primary mr-2">RENEW</div>
+                            <div class="btn btn-light">Cancel</div>
+                          </form>
+                        
+                        </div>
+                </div>
+
+              </div>
+              
+            <div class="col-md-12 col-lg-12"  style="padding: 2%">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">My Leave Applications</h4>
+                        <p class="card-description">
+                          
+                        </p>
+                        <!-- <span id="application_details" style="display: none">
+                          <button class="btn btn-dark" onclick="(function(){$('#application_details').hide()})()"> Close </button>
+                          <div class="table-responsive table-striped">
+                            <table id="teaching_table" class="table">
+                              <thead>
+                                <tr>
+                                    <th>Authority</th>
+                                    <th>Action</th>
+                                    <th>Comment</th>
+                                    <th>Date</th>
+                                </tr>
+                              </thead>
+                              <tbody  id="application_log">
+                                
+                                
+                              </tbody>
+                            </table>
+                          </div>
+                        </span> -->
+                        <div class="table-responsive table-striped">
+                          <table id="leave_application_list" class="table">
+                            <thead>
+                              <tr>
+                                  <th>Application Id</th>
+                                  <th>Leave From</th>
+                                  <th>Leave To</th>
+                                  <th>Status</th>
+                                  <th>Details</th>
+                              </tr>
+                            </thead>
+                            <tbody  id="application_table_body">
+                              
+                              
+                            </tbody>
+                          </table>
+                        </div>
+                      
+                      <br>  
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div class="col-md-12 col-lg-12 leave_content" style="padding: 2%">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Application Log</h4>
+                    <p class="card-description">
+                      Choose an application from Above to view the complete log.
+                    </p>
+                    <span id="error_application_log" style="color: red"></span>
+                    <h5 id="log_application" class="card-title"></h5>
+                    
+                    <button class="btn btn-dark" onclick="(function(){$('#application_log_details').hide()})()"> Close </button>
+                    <span id="application_log_details">
+                      <div class="table-responsive table-striped table-bordered table-inverted">
+                        <table id="application_log_table" class="table">
+                          <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Signed By</th>
+                                <th>Moved from Level</th>
+                                <th>Comment</th>
+                                <th>Moved to Level</th>
+                                
+                            </tr>
+                          </thead>
+                          <tbody  id="application_log_table_body">
+                            
+                            
+                          </tbody>
+                        </table>
+                      </div>
+                    </span>
+                  <br>  
+                </div>
+            </div>
+        </div>
+
+
+          <div class="row leave_content" id="other_faculty_details">
+              <div class="mr-md-3 col-md-3 mr-xl-5" style="padding: 2%">
+                  <h4 style="color: burlywood"> Employee <span style="color: grey"> Leave Details </span></h4>
+              </div>
+              <div class="col-md-12">
+                <div class="card">
+                    <button class="btn btn-primary" id="other_employees_leave"> Load </button>
+
+                    <div class="card-body">
+                        <div class="col-md-12 grid-margin">
+                          <span id="other_employee_leave_content" style="display: none">
+                              <div style="text-align:center">
+                                <button class="btn btn-outline-danger" onclick="(function(){$('#other_employee_leave_content').hide()})()"> Close </button>
+                              </div>
+                              <div class="table-responsive table-striped table-bordered">
+                                  <table id="other_faculty_leave_details" class="table">
+                                    <thead>
+                                      <tr>
+                                          <th>Name</th>
+                                          <th>Total Leaves This Year</th>
+                                          <th>Leaves Borrowed From Next Year</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody  id="other_faculty_leave_table">
+                                      
+                                      
+                                    </tbody>
+                                  </table>
+                                </div>
+                            </span>
+                        </div>    
+                    </div>
+                </div>
+              </div>
+          </div>
+          
+          <div class="row leave_content" >
+              <div class="mr-md-12 col-md-12 mr-xl-12" style="padding: 2%">
+                  <h4> Applications <span style="color: orangered"> Waiting </span></h4>
+              </div>
+              <div class="col-md-12 col-lg-12">
+                <div class="card">
+                    <button class="btn btn-primary" id="load_pending_applications">Load</button>
+                    <div class="card-body">             
+                    </div>
+                </div>
+              </div>
+
+              
+          </div>
+
+          <div class="row leave_content" id="pending_applications">
+              
+          </div>
+          
+
+
+        </div>
+        <!-- content-wrapper ends -->
+        <!-- partial:partials/_footer.html -->
+        <footer class="footer">
+          <div class="d-sm-flex justify-content-center justify-content-sm-between">
+            <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Sahil n Parth ©  </span>
+            <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">CS-301<i class="mdi mdi-heart text-danger"></i></span>
+          </div>
+        </footer>
+        <!-- partial -->
+      </div>
+      <!-- main-panel ends -->
+    </div>
+    <!-- page-body-wrapper ends -->
+  </div>
+  <!-- container-scroller -->
+
+  <!-- plugins:js -->
+  <script src="vendors/base/vendor.bundle.base.js"></script>
+  <!-- endinject -->
+  <!-- Plugin js for this page-->
+  <script src="vendors/chart.js/Chart.min.js"></script>
+  <script src="vendors/datatables.net/jquery.dataTables.js"></script>
+  <script src="vendors/datatables.net-bs4/dataTables.bootstrap4.js"></script>
+  <!-- End plugin js for this page-->
+  <!-- inject:js -->
+  <script src="js/off-canvas.js"></script>
+  <script src="js/hoverable-collapse.js"></script>
+  <script src="js/template.js"></script>
+  <!-- endinject -->
+  <!-- Custom js for this page-->
+  <script src="js/dashboard.js"></script>
+  <script src="js/data-table.js"></script>
+  <script src="js/jquery.dataTables.js"></script>
+  <script src="js/dataTables.bootstrap4.js"></script>
+
+
+  <script src="js/file-upload.js"></script>
+
+  <!-- End custom js for this page-->
+</body>
+
+</html>
